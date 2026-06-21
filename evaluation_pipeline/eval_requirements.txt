@@ -1,0 +1,11 @@
+pandas
+numpy
+scipy
+soundfile
+numba
+pyworld
+pysptk
+transformers<5
+jiwer
+speechmos
+onnxruntime
