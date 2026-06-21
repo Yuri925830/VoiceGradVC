@@ -1,0 +1,32 @@
+name: voicegrad-baselines
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - "numpy<2"
+  - pandas
+  - scipy
+  - h5py
+  - scikit-learn
+  - pyyaml
+  - tqdm
+  - librosa
+  - pytorch
+  - torchvision
+  - torchaudio
+  - pip:
+      - soundfile
+      - "setuptools<81"
+      - pyworld
+      - pysptk
+      - resampy
+      - gdown
+      - "transformers<5"
+      - jiwer
+      - speechmos
+      - onnxruntime
+      - wavenet_vocoder
+      - resemblyzer
