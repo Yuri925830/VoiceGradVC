@@ -140,6 +140,16 @@ python3 voicegrad/evaluation_pipeline/evaluate_models.py \
   --model Diff-VC=baselines/diff-vc
 ```
 
+```powershell
+python voicegrad/evaluation_pipeline/evaluate_models.py `
+  --compute-audio `
+  --model VoiceGrad-DPM-BNF=checkpoints/ckpt1000_closedset_test_result `
+  --model StarGAN-VC=baselines/stargan-vc `
+  --model AutoVC=baselines/autovc `
+  --model PPG-VC=baselines/ppg-vc `
+  --model Diff-VC=baselines/diff-vc
+```
+
 For full metrics:
 
 ```bash
@@ -153,6 +163,20 @@ python3 voicegrad/evaluation_pipeline/evaluate_models.py \
   --model StarGAN-VC=baselines/stargan-vc \
   --model AutoVC=baselines/autovc \
   --model PPG-VC=baselines/ppg-vc \
+  --model Diff-VC=baselines/diff-vc
+```
+
+```powershell
+conda activate voicegrad-baselines
+
+python voicegrad/evaluation_pipeline/evaluate_models.py `
+  --compute-audio `
+  --compute-cer `
+  --compute-pmos `
+  --model VoiceGrad-DPM-BNF=checkpoints/ckpt1000_closedset_test_result `
+  --model StarGAN-VC=baselines/stargan-vc `
+  --model AutoVC=baselines/autovc `
+  --model PPG-VC=baselines/ppg-vc `
   --model Diff-VC=baselines/diff-vc
 ```
 
@@ -203,6 +227,11 @@ This defines the conda environment used for baseline inference and full evaluati
 Create it with:
 
 ```bash
+conda env create -f voicegrad/baselines/environment.yml
+conda activate voicegrad-baselines
+```
+
+```powershell
 conda env create -f voicegrad/baselines/environment.yml
 conda activate voicegrad-baselines
 ```
@@ -272,6 +301,10 @@ Run it after changing the test split:
 python3 voicegrad/baselines/scripts/prepare_workspace.py
 ```
 
+```powershell
+python voicegrad/baselines/scripts/prepare_workspace.py
+```
+
 ### `voicegrad/baselines/scripts/check_setup.py`
 
 This checks whether the baseline environment, checkpoint files, and generated outputs are ready.
@@ -279,6 +312,10 @@ This checks whether the baseline environment, checkpoint files, and generated ou
 Run it often:
 
 ```bash
+conda run -n voicegrad-baselines python voicegrad/baselines/scripts/check_setup.py
+```
+
+```powershell
 conda run -n voicegrad-baselines python voicegrad/baselines/scripts/check_setup.py
 ```
 
@@ -321,10 +358,20 @@ python3 voicegrad/baselines/scripts/run_autovc_batch.py \
   --limit 1
 ```
 
+```powershell
+python voicegrad/baselines/scripts/run_autovc_batch.py `
+  --pairs bdl_to_clb `
+  --limit 1
+```
+
 Run all AutoVC conversions:
 
 ```bash
 python3 voicegrad/baselines/scripts/run_autovc_batch.py
+```
+
+```powershell
+python voicegrad/baselines/scripts/run_autovc_batch.py
 ```
 
 For path/debug checks without the WaveNet vocoder package or checkpoint:
@@ -333,6 +380,13 @@ For path/debug checks without the WaveNet vocoder package or checkpoint:
 python3 voicegrad/baselines/scripts/run_autovc_batch.py \
   --pairs bdl_to_clb \
   --limit 1 \
+  --vocoder griffin-lim
+```
+
+```powershell
+python voicegrad/baselines/scripts/run_autovc_batch.py `
+  --pairs bdl_to_clb `
+  --limit 1 `
   --vocoder griffin-lim
 ```
 
@@ -433,6 +487,7 @@ If sending a zip or branch to teammates, include:
 ```text
 voicegrad/EVALUATION_PIPELINE_SHARE_GUIDE.md
 voicegrad/evaluation_pipeline/
+voicegrad/evaluation_pipeline/EVALUATION.md
 voicegrad/baselines/README.md
 voicegrad/baselines/environment.yml
 voicegrad/baselines/evaluate_all.sh

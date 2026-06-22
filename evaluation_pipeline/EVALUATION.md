@@ -12,6 +12,10 @@ voicegrad/EVALUATION_PIPELINE_SHARE_GUIDE.md
 python3 voicegrad/evaluation_pipeline/evaluate_models.py
 ```
 
+```powershell
+python voicegrad/evaluation_pipeline/evaluate_models.py
+```
+
 By default it aggregates the existing VoiceGrad result folder:
 
 ```text
@@ -72,6 +76,15 @@ python3 voicegrad/evaluation_pipeline/evaluate_models.py \
   --model Diff-VC=baselines/diff-vc
 ```
 
+```powershell
+python voicegrad/evaluation_pipeline/evaluate_models.py `
+  --model VoiceGrad-DPM-BNF=checkpoints/ckpt1000_closedset_test_result `
+  --model StarGAN-VC=baselines/stargan-vc `
+  --model AutoVC=baselines/autovc `
+  --model PPG-VC=baselines/ppg-vc `
+  --model Diff-VC=baselines/diff-vc
+```
+
 To compute paper-style MCD and LFC from `generated_wavs` instead:
 
 ```bash
@@ -83,6 +96,18 @@ python3 voicegrad/evaluation_pipeline/evaluate_models.py \
   --model StarGAN-VC=baselines/stargan-vc \
   --model AutoVC=baselines/autovc \
   --model PPG-VC=baselines/ppg-vc \
+  --model Diff-VC=baselines/diff-vc
+```
+
+```powershell
+python -m pip install -r voicegrad/evaluation_pipeline/eval_requirements.txt
+
+python voicegrad/evaluation_pipeline/evaluate_models.py `
+  --compute-audio `
+  --model VoiceGrad-DPM-BNF=checkpoints/ckpt1000_closedset_test_result `
+  --model StarGAN-VC=baselines/stargan-vc `
+  --model AutoVC=baselines/autovc `
+  --model PPG-VC=baselines/ppg-vc `
   --model Diff-VC=baselines/diff-vc
 ```
 
@@ -102,6 +127,19 @@ python3 voicegrad/evaluation_pipeline/evaluate_models.py \
   --model StarGAN-VC=baselines/stargan-vc \
   --model AutoVC=baselines/autovc \
   --model PPG-VC=baselines/ppg-vc \
+  --model Diff-VC=baselines/diff-vc
+```
+
+```powershell
+conda activate voicegrad-baselines
+
+python voicegrad/evaluation_pipeline/evaluate_models.py `
+  --compute-audio `
+  --compute-cer `
+  --compute-pmos `
+  --model StarGAN-VC=baselines/stargan-vc `
+  --model AutoVC=baselines/autovc `
+  --model PPG-VC=baselines/ppg-vc `
   --model Diff-VC=baselines/diff-vc
 ```
 
