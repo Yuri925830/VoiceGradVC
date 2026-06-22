@@ -12,29 +12,29 @@ from dataset import get_dataloader
 
 
 CONFIG = {
-    # data_root 下面应直接包含 mel / bnf / stats
+    # root folder of dataset containing the mel / bnf / stats sub-folder
     'data_root': '/content/drive/MyDrive/VoiceGrad/data',
 
-    # 训练设置
-    'epochs': 4000,
-    'batch_size': 16,
-    'lr': 1e-4,
-    'num_workers': 4,
-    'seed': 1234,
+    # training settings
+    'epochs': 4000, 
+    'batch_size': 16, 
+    'lr': 1e-4, 
+    'num_workers': 4, 
+    'seed': 1234, 
 
-    # 梯度裁剪
+    # gradient clipping
     'grad_clip_max_norm': 1.0,
     'grad_warn_threshold': 5.0,
 
-    # 验证 / 保存
-    'val_every': 20,
-    'plot_every': 50,
-    'save_every': 500,
+    # validation / saving schedules
+    'val_every': 20, 
+    'plot_every': 50, 
+    'save_every': 500, 
 
-    # 路径
-    'save_dir': './checkpoints',
+    # paths
+    'save_dir': './checkpoints', 
 
-    # 设备
+    # device
     'device': 'cuda' if torch.cuda.is_available() else 'cpu'
 }
 
@@ -81,7 +81,9 @@ def train_one_epoch(model, diffusion, train_loader, optimizer, device):
         bnf = batch['bnf'].to(device)          # [B, 144, T]
         spk = batch['spk_id'].to(device)       # [B]
 
-        # l ~ U(1, ..., L)，代码里用 0-based => 0 ~ L-1
+        # pick a random diffusion step 't' for each sample in the batch
+        # in the math this is the noise level 1 ~ Uniform(1, ...,L)
+        # the code uses 0-based indexing, so the range is 0 ... L-1
         t = torch.randint(
             low=0,
             high=diffusion.n_levels,
@@ -107,7 +109,8 @@ def train_one_epoch(model, diffusion, train_loader, optimizer, device):
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
 
-        # 梯度裁剪；返回值是裁剪前的总梯度范数
+        # gradient clipping. rescales the gradients so their combined size never exceeds grad_clip_max_norm
+        # return value is the total gradient norm measured before clipping which is logged below
         grad_norm = torch.nn.utils.clip_grad_norm_(
             model.parameters(),
             max_norm=CONFIG['grad_clip_max_norm']
@@ -118,7 +121,8 @@ def train_one_epoch(model, diffusion, train_loader, optimizer, device):
 
         epoch_grad_norms.append(float(grad_norm))
 
-        # 如果梯度特别大，打印警告
+        # if the pre-clipped gradient was unusally large, print warning can find which batch it's from
+        # clipping still keeps training stable but frequent warnings hint something may be off
         if grad_norm > CONFIG['grad_warn_threshold']:
             print(
                 f"[Grad Warning] batch={batch_idx} "
@@ -241,7 +245,7 @@ def train():
                 f"GradMax: {max_grad:.4f}"
             )
 
-            # Validation
+            # validation
             if epoch_num % CONFIG['val_every'] == 0:
                 avg_val_loss = validate_one_epoch(
                     model=model,
@@ -252,7 +256,7 @@ def train():
                 history['val'].append((epoch_num, avg_val_loss))
                 log_msg += f" | Val: {avg_val_loss:.4f}"
 
-                # 保存 best
+                # saving the best model whenever validation loss improves
                 if avg_val_loss < best_val_loss:
                     best_val_loss = avg_val_loss
                     best_ckpt = {
@@ -268,7 +272,8 @@ def train():
 
             print(log_msg)
 
-            # 总是保存 latest
+            # always save the latest model after every epoch
+            # this is the 'resume from here if the run dies' checkpoint
             latest_ckpt = {
                 'epoch': epoch_num,
                 'model': model.state_dict(),
@@ -279,13 +284,14 @@ def train():
             }
             torch.save(latest_ckpt, os.path.join(CONFIG['save_dir'], 'latest_model.pt'))
 
-            # 定期保存历史版本
+            # periodically save a numbered historical checkpoint
+            # keeps snapshots at fixed epochs so versions can be compared later
             if epoch_num % CONFIG['save_every'] == 0:
                 ckpt_path = os.path.join(CONFIG['save_dir'], f'model_epoch_{epoch_num}.pt')
                 torch.save(latest_ckpt, ckpt_path)
                 print(f"Checkpoint saved: {ckpt_path}")
 
-            # 定期画图
+            # periodically draw and save the loss curve
             if epoch_num % CONFIG['plot_every'] == 0:
                 save_loss_plot(
                     history,
