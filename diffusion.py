@@ -10,7 +10,7 @@ class VoiceGradDiffusion(nn.Module):
         self.offset = offset
 
         # =========================================================
-        # 1. Cosine Noise Schedule (严格按论文 V-E 公式 21)
+        # 1. Cosine Noise Schedule (Strictly following paper V-E equation 21)
         #
         # alpha_bar_l = f(l) / f(0)
         # f(l) = cos(((l / L) + eta) / (1 + eta) * pi / 2)^2
@@ -32,13 +32,13 @@ class VoiceGradDiffusion(nn.Module):
         betas = betas.float()
         alphas = (1.0 - betas).float()
 
-        # 注意：
-        # 这里使用 clipped beta 重新累乘得到 alpha_bar，
-        # 这样训练和采样严格自洽。
+        # Note: 
+        # Re-calculating alphas_cumprod using clipped betas ensures 
+        # consistency between training and sampling.
         alphas_cumprod = torch.cumprod(alphas, dim=0).float()
 
         # =========================================================
-        # 2. 预计算常用系数
+        # 2. Precompute common coefficients
         # =========================================================
         self.register_buffer("betas", betas)
         self.register_buffer("alphas", alphas)
@@ -52,20 +52,20 @@ class VoiceGradDiffusion(nn.Module):
         )
         self.register_buffer("recip_sqrt_alphas", 1.0 / torch.sqrt(alphas))
 
-        # Algorithm 4 里的系数:
+        # Coefficients for Algorithm 4:
         # (1 - alpha_l) / sqrt(1 - alpha_bar_l)
         self.register_buffer(
             "remove_noise_coeff",
             betas / torch.sqrt(1.0 - alphas_cumprod)
         )
 
-        # 论文中设 nu_l^2 = beta_l，所以 nu_l = sqrt(beta_l)
+        # In the paper nu_l^2 = beta_l, so nu_l = sqrt(beta_l)
         self.register_buffer("sigma", torch.sqrt(betas))
 
     def get_index(self, tensor, t, shape):
         """
-        从 shape [L] 的时间表里，取出 batch 中每个样本在时刻 t 的值，
-        然后 reshape 成可广播形状。
+        Extract the value at time t for each sample in the batch from a 
+        schedule of shape [L], then reshape for broadcasting.
         """
         batch_size = t.shape[0]
         out = tensor.gather(0, t)
@@ -73,8 +73,8 @@ class VoiceGradDiffusion(nn.Module):
 
     def q_sample(self, x_start, t, noise=None):
         """
-        前向扩散（训练时用）
-        论文公式:
+        Forward diffusion (used during training).
+        Formula:
             x_t = sqrt(alpha_bar_t) * x_0 + sqrt(1 - alpha_bar_t) * epsilon
         """
         if noise is None:
@@ -92,30 +92,30 @@ class VoiceGradDiffusion(nn.Module):
     @torch.no_grad()
     def sample(self, model, x_source, speaker_id, bnf, start_level=11):
         """
-        严格按论文 Algorithm 4 的 DPM-based VoiceGrad 采样
+        Sampling using DPM-based VoiceGrad (Algorithm 4 from the paper)
 
         Args:
-            model: 训练好的 VoiceGrad 模型
-            x_source: 源语音 mel（已归一化） [B, 80, T]
-            speaker_id: 目标说话人 ID [B]
-            bnf: BNF 特征 [B, 144, T]
-            start_level: 论文中的 L'，默认 11
+            model: Trained VoiceGrad model
+            x_source: Source speech mel (normalized) [B, 80, T]
+            speaker_id: Target speaker ID [B]
+            bnf: BNF features [B, 144, T]
+            start_level: L' from the paper, default 11
 
         Returns:
-            x: 转换后的 mel 特征
+            x: Converted mel features
         """
         if start_level < 1 or start_level > self.n_levels:
             raise ValueError(
                 f"start_level must be in [1, {self.n_levels}], but got {start_level}"
             )
 
-        # 论文思路：直接从 source mel 开始反向扩散
+        # Approach: Start reverse diffusion directly from source mel
         x = x_source.clone()
         batch_size = x.shape[0]
         device = x.device
 
-        # 论文写法是 l = L' ... 1
-        # 这里显式保留论文的 1-based 语义，再映射到 0-based index
+        # Loop from l = L' ... 1
+        # Explicitly maintain 1-based semantics from the paper, then map to 0-based index
         for l in range(start_level, 0, -1):
             t = torch.full((batch_size,), l - 1, device=device, dtype=torch.long)
 
@@ -130,7 +130,7 @@ class VoiceGradDiffusion(nn.Module):
             # x <- 1/sqrt(alpha_l) * (x - (1-alpha_l)/sqrt(1-alpha_bar_l) * eps_theta) + nu_l * z
             mean = recip_sqrt_alpha * (x - noise_coeff * predicted_noise)
 
-            # 严格按论文：每一步都 draw z ~ N(0, I)
+            # Draw z ~ N(0, I) at each step
             z = torch.randn_like(x)
 
             x = mean + sigma * z
@@ -140,7 +140,7 @@ class VoiceGradDiffusion(nn.Module):
 
 if __name__ == "__main__":
     # =========================
-    # 最小自测
+    # Minimal smoke test
     # =========================
     diffusion = VoiceGradDiffusion(n_levels=20, offset=0.008)
 
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     print("x0 shape:", x0.shape)
     print("xt shape:", xt.shape)
 
-    # 检查 schedule 合法性
+    # Check schedule validity
     print("betas shape:", diffusion.betas.shape)
     print("alphas_cumprod shape:", diffusion.alphas_cumprod.shape)
     print("beta min/max:", diffusion.betas.min().item(), diffusion.betas.max().item())
